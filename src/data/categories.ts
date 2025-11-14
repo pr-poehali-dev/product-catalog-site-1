@@ -17,6 +17,7 @@ export const categories: Category[] = [
           { id: 'video-ip-2mp', name: '2 Мпикс', slug: '2mp', subcategoryId: 'video-ip-cameras' },
           { id: 'video-ip-4mp', name: '4 Мпикс', slug: '4mp', subcategoryId: 'video-ip-cameras' },
           { id: 'video-ip-6mp', name: '6 Мпикс', slug: '6mp', subcategoryId: 'video-ip-cameras' },
+          { id: 'video-ip-8mp', name: '8 Мпикс', slug: '8mp', subcategoryId: 'video-ip-cameras' },
           { id: 'video-ip-12mp', name: '12 Мпикс', slug: '12mp', subcategoryId: 'video-ip-cameras' },
         ]
       },
