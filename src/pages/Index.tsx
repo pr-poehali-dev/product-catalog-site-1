@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -212,9 +213,11 @@ export default function Index() {
             </div>
 
             <div className="hidden md:flex items-center gap-6">
+              <Link to="/catalog">
+                <Button variant="ghost">Каталог</Button>
+              </Link>
               {[
                 { id: 'home', label: 'Главная' },
-                { id: 'catalog', label: 'Каталог' },
                 { id: 'about', label: 'О компании' },
                 { id: 'delivery', label: 'Доставка' },
                 { id: 'faq', label: 'FAQ' },
