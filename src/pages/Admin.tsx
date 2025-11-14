@@ -120,6 +120,24 @@ export default function Admin() {
             Импорт товаров
           </h1>
 
+          <div className="mb-6 p-4 bg-accent rounded-lg border">
+            <div className="flex items-start gap-3">
+              <Icon name="FileSpreadsheet" size={20} className="text-primary mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">Шаблон для заполнения</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Скачайте готовый шаблон со всеми категориями и ID. Заполните столбцы с товарами и импортируйте обратно.
+                </p>
+                <Button asChild variant="outline" size="sm">
+                  <a href="/catalog-template.csv" download="SecurePro-шаблон-каталога.csv">
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать шаблон CSV
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-6">
             <div>
               <Label htmlFor="category">Категория *</Label>
