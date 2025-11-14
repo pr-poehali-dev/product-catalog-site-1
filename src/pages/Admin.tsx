@@ -16,13 +16,82 @@ export default function Admin() {
   const [subSubcategoryId, setSubSubcategoryId] = useState('');
   const [importData, setImportData] = useState('');
   const [importing, setImporting] = useState(false);
+  const [importMode, setImportMode] = useState<'manual' | 'csv'>('csv');
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const subcategories = selectedCategory?.subcategories || [];
   const selectedSubcategory = subcategories.find(s => s.id === subcategoryId);
   const subSubcategories = selectedSubcategory?.subSubcategories || [];
 
-  const handleImport = () => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      handleCSVImport(text);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCSVImport = (csvText: string) => {
+    setImporting(true);
+
+    try {
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        toast.error('CSV файл пустой или неверный формат');
+        setImporting(false);
+        return;
+      }
+
+      const productsToAdd = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const parts = line.split(',');
+        if (parts.length < 10) continue;
+
+        const [, catId, , subCatId, , subSubCatId, sku, code, description, priceStr] = parts;
+        
+        if (!sku || !description || !priceStr) continue;
+        
+        const price = parseInt(priceStr.replace(/[^\d]/g, ''));
+        if (!price || price <= 0) continue;
+
+        productsToAdd.push({
+          sku: sku.trim(),
+          name: sku.trim(),
+          description: description.trim().replace(/^"|"$/g, ''),
+          price,
+          categoryId: catId.trim(),
+          subcategoryId: subCatId.trim(),
+          subSubcategoryId: subSubCatId?.trim() || undefined,
+          inStock: true
+        });
+      }
+
+      if (productsToAdd.length === 0) {
+        toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов Артикул, Описание, Цена');
+        setImporting(false);
+        return;
+      }
+
+      addProducts(productsToAdd);
+      toast.success(`Импортировано товаров: ${productsToAdd.length}`);
+      
+    } catch (error) {
+      console.error('CSV Import error:', error);
+      toast.error('Ошибка при импорте CSV');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleManualImport = () => {
     if (!categoryId || !subcategoryId) {
       toast.error('Выберите категорию и подкатегорию');
       return;
@@ -138,6 +207,44 @@ export default function Admin() {
             </div>
           </div>
 
+          <div className="mb-6 flex gap-2 p-1 bg-muted rounded-lg">
+            <Button
+              variant={importMode === 'csv' ? 'default' : 'ghost'}
+              onClick={() => setImportMode('csv')}
+              className="flex-1"
+            >
+              <Icon name="FileUp" size={18} className="mr-2" />
+              Загрузить CSV
+            </Button>
+            <Button
+              variant={importMode === 'manual' ? 'default' : 'ghost'}
+              onClick={() => setImportMode('manual')}
+              className="flex-1"
+            >
+              <Icon name="ClipboardPaste" size={18} className="mr-2" />
+              Вставить из таблицы
+            </Button>
+          </div>
+
+          {importMode === 'csv' ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="csvFile">Файл CSV с товарами</Label>
+                <div className="mt-2">
+                  <Input
+                    id="csvFile"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    disabled={importing}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Загрузите заполненный шаблон CSV. Товары импортируются автоматически после выбора файла.
+                </p>
+              </div>
+            </div>
+          ) : (
           <div className="space-y-6">
             <div>
               <Label htmlFor="category">Категория *</Label>
@@ -213,7 +320,7 @@ export default function Admin() {
 
             <div className="flex gap-3">
               <Button 
-                onClick={handleImport} 
+                onClick={handleManualImport} 
                 disabled={importing || !categoryId || !subcategoryId || !importData.trim()}
                 className="flex-1"
               >
@@ -234,18 +341,29 @@ export default function Admin() {
               </Button>
             </div>
           </div>
+          )}
 
           <div className="mt-8 p-4 bg-muted rounded-lg">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
               <Icon name="Info" size={18} />
               Инструкция по импорту
             </h3>
-            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>Выберите категорию и подкатегорию для товаров</li>
-              <li>Скопируйте строки из Excel (с колонками: Артикул, Код, Описание, Цена)</li>
-              <li>Вставьте данные в текстовое поле</li>
-              <li>Нажмите "Импортировать товары"</li>
-            </ol>
+            {importMode === 'csv' ? (
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Скачайте шаблон CSV выше</li>
+                <li>Откройте в Excel или Google Sheets</li>
+                <li>Заполните столбцы: Артикул, Код, Описание, Цена</li>
+                <li>Сохраните файл в формате CSV</li>
+                <li>Загрузите файл через кнопку выше — импорт произойдет автоматически</li>
+              </ol>
+            ) : (
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Выберите категорию и подкатегорию для товаров</li>
+                <li>Скопируйте строки из Excel (с колонками: Артикул, Код, Описание, Цена)</li>
+                <li>Вставьте данные в текстовое поле</li>
+                <li>Нажмите "Импортировать товары"</li>
+              </ol>
+            )}
           </div>
         </Card>
       </main>
