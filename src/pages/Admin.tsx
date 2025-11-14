@@ -11,6 +11,17 @@ import { categories } from '@/data/categories';
 import { addProducts } from '@/data/products';
 import { toast } from 'sonner';
 
+interface PreviewProduct {
+  sku: string;
+  name: string;
+  description: string;
+  price: number;
+  categoryId: string;
+  subcategoryId: string;
+  subSubcategoryId?: string;
+  inStock: boolean;
+}
+
 export default function Admin() {
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
@@ -18,6 +29,8 @@ export default function Admin() {
   const [importData, setImportData] = useState('');
   const [importing, setImporting] = useState(false);
   const [importMode, setImportMode] = useState<'manual' | 'csv'>('csv');
+  const [previewProducts, setPreviewProducts] = useState<PreviewProduct[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const subcategories = selectedCategory?.subcategories || [];
@@ -31,23 +44,20 @@ export default function Admin() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      handleCSVImport(text);
+      parseCSVForPreview(text);
     };
     reader.readAsText(file);
   };
 
-  const handleCSVImport = (csvText: string) => {
-    setImporting(true);
-
+  const parseCSVForPreview = (csvText: string) => {
     try {
       const lines = csvText.trim().split('\n');
       if (lines.length < 2) {
         toast.error('CSV файл пустой или неверный формат');
-        setImporting(false);
         return;
       }
 
-      const productsToAdd = [];
+      const productsToAdd: PreviewProduct[] = [];
       
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -77,22 +87,19 @@ export default function Admin() {
 
       if (productsToAdd.length === 0) {
         toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов Артикул, Описание, Цена');
-        setImporting(false);
         return;
       }
 
-      addProducts(productsToAdd);
-      toast.success(`Импортировано товаров: ${productsToAdd.length}`);
+      setPreviewProducts(productsToAdd);
+      setShowPreview(true);
       
     } catch (error) {
-      console.error('CSV Import error:', error);
-      toast.error('Ошибка при импорте CSV');
-    } finally {
-      setImporting(false);
+      console.error('CSV Parse error:', error);
+      toast.error('Ошибка при чтении CSV');
     }
   };
 
-  const handleManualImport = () => {
+  const parseManualForPreview = () => {
     if (!categoryId || !subcategoryId) {
       toast.error('Выберите категорию и подкатегорию');
       return;
@@ -103,11 +110,9 @@ export default function Admin() {
       return;
     }
 
-    setImporting(true);
-
     try {
       const lines = importData.trim().split('\n').filter(line => line.trim());
-      const productsToAdd = [];
+      const productsToAdd: PreviewProduct[] = [];
 
       for (const line of lines) {
         const parts = line.split('\t').map(p => p.trim());
@@ -135,21 +140,53 @@ export default function Admin() {
 
       if (productsToAdd.length === 0) {
         toast.error('Не удалось распознать товары. Проверьте формат данных');
-        setImporting(false);
         return;
       }
 
-      addProducts(productsToAdd);
+      setPreviewProducts(productsToAdd);
+      setShowPreview(true);
       
-      toast.success(`Импортировано товаров: ${productsToAdd.length}`);
+    } catch (error) {
+      console.error('Parse error:', error);
+      toast.error('Ошибка при обработке данных');
+    }
+  };
+
+  const confirmImport = () => {
+    setImporting(true);
+    try {
+      addProducts(previewProducts);
+      toast.success(`Импортировано товаров: ${previewProducts.length}`);
+      setPreviewProducts([]);
+      setShowPreview(false);
       setImportData('');
-      
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Ошибка при импорте товаров');
     } finally {
       setImporting(false);
     }
+  };
+
+  const cancelPreview = () => {
+    setPreviewProducts([]);
+    setShowPreview(false);
+  };
+
+  const getCategoryName = (catId: string) => {
+    return categories.find(c => c.id === catId)?.name || catId;
+  };
+
+  const getSubcategoryName = (catId: string, subCatId: string) => {
+    const cat = categories.find(c => c.id === catId);
+    return cat?.subcategories.find(s => s.id === subCatId)?.name || subCatId;
+  };
+
+  const getSubSubcategoryName = (catId: string, subCatId: string, subSubCatId?: string) => {
+    if (!subSubCatId) return '';
+    const cat = categories.find(c => c.id === catId);
+    const subCat = cat?.subcategories.find(s => s.id === subCatId);
+    return subCat?.subSubcategories?.find(s => s.id === subSubCatId)?.name || subSubCatId;
   };
 
   return (
@@ -241,7 +278,7 @@ export default function Admin() {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Загрузите заполненный шаблон CSV. Товары импортируются автоматически после выбора файла.
+                  Загрузите заполненный шаблон CSV для предпросмотра товаров перед импортом.
                 </p>
               </div>
             </div>
@@ -321,27 +358,76 @@ export default function Admin() {
 
             <div className="flex gap-3">
               <Button 
-                onClick={handleManualImport} 
+                onClick={parseManualForPreview} 
                 disabled={importing || !categoryId || !subcategoryId || !importData.trim()}
                 className="flex-1"
               >
-                {importing ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Импортируем...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Upload" size={20} className="mr-2" />
-                    Импортировать товары
-                  </>
-                )}
+                <Icon name="Eye" size={20} className="mr-2" />
+                Предпросмотр
               </Button>
               <Button variant="outline" onClick={() => setImportData('')}>
                 Очистить
               </Button>
             </div>
           </div>
+          )}
+
+          {showPreview && previewProducts.length > 0 && (
+            <div className="mt-6 border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Icon name="Eye" size={24} />
+                  Предпросмотр импорта ({previewProducts.length} товаров)
+                </h2>
+                <div className="flex gap-2">
+                  <Button onClick={confirmImport} disabled={importing}>
+                    {importing ? (
+                      <>
+                        <Icon name="Loader2" size={18} className="mr-2 animate-spin" />
+                        Импортируем...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Check" size={18} className="mr-2" />
+                        Подтвердить импорт
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={cancelPreview}>
+                    Отмена
+                  </Button>
+                </div>
+              </div>
+
+              <div className="max-h-[500px] overflow-y-auto space-y-2">
+                {previewProducts.map((product, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-semibold text-lg mb-1">{product.sku}</div>
+                        <div className="text-sm text-muted-foreground mb-2">{product.description}</div>
+                        <div className="flex gap-2 text-xs">
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded">
+                            {getCategoryName(product.categoryId)}
+                          </span>
+                          <span className="px-2 py-1 bg-secondary rounded">
+                            {getSubcategoryName(product.categoryId, product.subcategoryId)}
+                          </span>
+                          {product.subSubcategoryId && (
+                            <span className="px-2 py-1 bg-accent rounded">
+                              {getSubSubcategoryName(product.categoryId, product.subcategoryId, product.subSubcategoryId)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">{product.price.toLocaleString('ru-RU')} ₽</div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )}
 
           <div className="mt-8 p-4 bg-muted rounded-lg">
@@ -355,14 +441,15 @@ export default function Admin() {
                 <li>Откройте в Excel или Google Sheets</li>
                 <li>Заполните столбцы: Артикул, Код, Описание, Цена</li>
                 <li>Сохраните файл в формате CSV</li>
-                <li>Загрузите файл через кнопку выше — импорт произойдет автоматически</li>
+                <li>Загрузите файл для предпросмотра и подтверждения импорта</li>
               </ol>
             ) : (
               <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Выберите категорию и подкатегорию для товаров</li>
                 <li>Скопируйте строки из Excel (с колонками: Артикул, Код, Описание, Цена)</li>
                 <li>Вставьте данные в текстовое поле</li>
-                <li>Нажмите "Импортировать товары"</li>
+                <li>Нажмите "Предпросмотр" для проверки данных</li>
+                <li>Подтвердите импорт товаров</li>
               </ol>
             )}
           </div>
