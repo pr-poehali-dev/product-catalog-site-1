@@ -12,17 +12,22 @@ import { products, searchProducts } from '@/data/products';
 import { toast } from 'sonner';
 
 export default function Catalog() {
-  const { categorySlug, subcategorySlug } = useParams();
+  const { categorySlug, subcategorySlug, subSubcategorySlug } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const currentCategory = categorySlug ? getCategoryBySlug(categorySlug) : null;
   const currentSubcategory = currentCategory?.subcategories.find(sub => sub.slug === subcategorySlug);
+  const currentSubSubcategory = currentSubcategory?.subSubcategories?.find(sub => sub.slug === subSubcategorySlug);
 
   const displayedProducts = useMemo(() => {
     if (searchQuery.trim()) {
       return searchProducts(searchQuery);
+    }
+
+    if (currentSubSubcategory) {
+      return products.filter(p => p.subSubcategoryId === currentSubSubcategory.id);
     }
 
     if (currentSubcategory) {
@@ -34,7 +39,7 @@ export default function Catalog() {
     }
 
     return products;
-  }, [searchQuery, currentCategory, currentSubcategory]);
+  }, [searchQuery, currentCategory, currentSubcategory, currentSubSubcategory]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -102,15 +107,27 @@ export default function Catalog() {
               {currentSubcategory && (
                 <>
                   <Icon name="ChevronRight" size={16} />
-                  <span className="text-foreground font-medium">{currentSubcategory.name}</span>
+                  {currentSubSubcategory ? (
+                    <Link to={`/catalog/${currentCategory.slug}/${currentSubcategory.slug}`} className="hover:text-foreground">
+                      {currentSubcategory.name}
+                    </Link>
+                  ) : (
+                    <span className="text-foreground font-medium">{currentSubcategory.name}</span>
+                  )}
+                </>
+              )}
+              {currentSubSubcategory && (
+                <>
+                  <Icon name="ChevronRight" size={16} />
+                  <span className="text-foreground font-medium">{currentSubSubcategory.name}</span>
                 </>
               )}
             </div>
 
             <h1 className="text-3xl font-bold mb-2">
-              {currentSubcategory?.name || currentCategory?.name || 'Каталог товаров'}
+              {currentSubSubcategory?.name || currentSubcategory?.name || currentCategory?.name || 'Каталог товаров'}
             </h1>
-            {(currentCategory || currentSubcategory) && (
+            {(currentCategory || currentSubcategory || currentSubSubcategory) && (
               <p className="text-muted-foreground">
                 {currentSubcategory?.description || currentCategory?.description}
               </p>

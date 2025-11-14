@@ -30,13 +30,37 @@ export default function CatalogNav() {
                 <AccordionContent className="pb-2 pt-1">
                   <div className="space-y-1 ml-4">
                     {category.subcategories.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        to={`/catalog/${category.slug}/${sub.slug}`}
-                        className="block py-1.5 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
+                      <div key={sub.id}>
+                        {sub.subSubcategories && sub.subSubcategories.length > 0 ? (
+                          <Accordion type="multiple" className="space-y-1">
+                            <AccordionItem value={sub.id} className="border-none">
+                              <AccordionTrigger className="hover:no-underline py-1.5 px-3 text-sm">
+                                {sub.name}
+                              </AccordionTrigger>
+                              <AccordionContent className="pb-1 pt-1">
+                                <div className="space-y-1 ml-4">
+                                  {sub.subSubcategories.map((subSub) => (
+                                    <Link
+                                      key={subSub.id}
+                                      to={`/catalog/${category.slug}/${sub.slug}/${subSub.slug}`}
+                                      className="block py-1 px-3 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                                    >
+                                      {subSub.name}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        ) : (
+                          <Link
+                            to={`/catalog/${category.slug}/${sub.slug}`}
+                            className="block py-1.5 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                          >
+                            {sub.name}
+                          </Link>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </AccordionContent>
@@ -72,14 +96,39 @@ export default function CatalogNav() {
                   <AccordionContent className="pb-2 pt-1">
                     <div className="space-y-1 ml-4">
                       {category.subcategories.map((sub) => (
-                        <Link
-                          key={sub.id}
-                          to={`/catalog/${category.slug}/${sub.slug}`}
-                          onClick={() => setIsOpen(false)}
-                          className="block py-1.5 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                        >
-                          {sub.name}
-                        </Link>
+                        <div key={sub.id}>
+                          {sub.subSubcategories && sub.subSubcategories.length > 0 ? (
+                            <Accordion type="multiple" className="space-y-1">
+                              <AccordionItem value={sub.id} className="border-none">
+                                <AccordionTrigger className="hover:no-underline py-1.5 px-3 text-sm">
+                                  {sub.name}
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-1 pt-1">
+                                  <div className="space-y-1 ml-4">
+                                    {sub.subSubcategories.map((subSub) => (
+                                      <Link
+                                        key={subSub.id}
+                                        to={`/catalog/${category.slug}/${sub.slug}/${subSub.slug}`}
+                                        onClick={() => setIsOpen(false)}
+                                        className="block py-1 px-3 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                                      >
+                                        {subSub.name}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          ) : (
+                            <Link
+                              to={`/catalog/${category.slug}/${sub.slug}`}
+                              onClick={() => setIsOpen(false)}
+                              className="block py-1.5 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                            >
+                              {sub.name}
+                            </Link>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </AccordionContent>

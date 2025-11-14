@@ -13,11 +13,14 @@ import { toast } from 'sonner';
 export default function Admin() {
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
+  const [subSubcategoryId, setSubSubcategoryId] = useState('');
   const [importData, setImportData] = useState('');
   const [importing, setImporting] = useState(false);
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const subcategories = selectedCategory?.subcategories || [];
+  const selectedSubcategory = subcategories.find(s => s.id === subcategoryId);
+  const subSubcategories = selectedSubcategory?.subSubcategories || [];
 
   const handleImport = () => {
     if (!categoryId || !subcategoryId) {
@@ -53,6 +56,7 @@ export default function Admin() {
               price,
               categoryId,
               subcategoryId,
+              subSubcategoryId: subSubcategoryId || undefined,
               inStock: true
             });
           }
@@ -138,7 +142,10 @@ export default function Admin() {
 
             <div>
               <Label htmlFor="subcategory">Подкатегория *</Label>
-              <Select value={subcategoryId} onValueChange={setSubcategoryId} disabled={!categoryId}>
+              <Select value={subcategoryId} onValueChange={(value) => {
+                setSubcategoryId(value);
+                setSubSubcategoryId('');
+              }} disabled={!categoryId}>
                 <SelectTrigger id="subcategory">
                   <SelectValue placeholder="Выберите подкатегорию" />
                 </SelectTrigger>
@@ -151,6 +158,25 @@ export default function Admin() {
                 </SelectContent>
               </Select>
             </div>
+
+            {subSubcategories.length > 0 && (
+              <div>
+                <Label htmlFor="subsubcategory">Разрешение (опционально)</Label>
+                <Select value={subSubcategoryId} onValueChange={setSubSubcategoryId} disabled={!subcategoryId}>
+                  <SelectTrigger id="subsubcategory">
+                    <SelectValue placeholder="Выберите разрешение" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Не выбрано</SelectItem>
+                    {subSubcategories.map((subSub) => (
+                      <SelectItem key={subSub.id} value={subSub.id}>
+                        {subSub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="data">Данные товаров *</Label>

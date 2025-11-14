@@ -8,7 +8,18 @@ export const categories: Category[] = [
     icon: 'Camera',
     description: 'Камеры, регистраторы, системы видеонаблюдения',
     subcategories: [
-      { id: 'video-ip-cameras', name: 'IP-камеры', slug: 'ip-kamery', categoryId: 'video' },
+      { 
+        id: 'video-ip-cameras', 
+        name: 'IP-камеры', 
+        slug: 'ip-kamery', 
+        categoryId: 'video',
+        subSubcategories: [
+          { id: 'video-ip-2mp', name: '2 Мпикс', slug: '2mp', subcategoryId: 'video-ip-cameras' },
+          { id: 'video-ip-4mp', name: '4 Мпикс', slug: '4mp', subcategoryId: 'video-ip-cameras' },
+          { id: 'video-ip-6mp', name: '6 Мпикс', slug: '6mp', subcategoryId: 'video-ip-cameras' },
+          { id: 'video-ip-12mp', name: '12 Мпикс', slug: '12mp', subcategoryId: 'video-ip-cameras' },
+        ]
+      },
       { id: 'video-ip-poe', name: 'IP-камеры с PoE', slug: 'ip-poe', categoryId: 'video' },
       { id: 'video-ahd', name: 'AHD-камеры', slug: 'ahd-kamery', categoryId: 'video' },
       { id: 'video-nvr', name: 'IP-видеорегистраторы (NVR)', slug: 'nvr', categoryId: 'video' },
