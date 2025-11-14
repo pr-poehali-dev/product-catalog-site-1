@@ -46,7 +46,7 @@ export default function Admin() {
       const text = e.target?.result as string;
       parseCSVForPreview(text);
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   };
 
   const parseCSVForPreview = (csvText: string) => {
@@ -189,6 +189,35 @@ export default function Admin() {
     return subCat?.subSubcategories?.find(s => s.id === subSubCatId)?.name || subSubCatId;
   };
 
+  const updatePreviewProduct = (index: number, field: keyof PreviewProduct, value: any) => {
+    setPreviewProducts(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const removePreviewProduct = (index: number) => {
+    setPreviewProducts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const downloadCSVTemplate = () => {
+    fetch('/catalog-template.csv')
+      .then(res => res.text())
+      .then(csvText => {
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvText], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'SecurePro-шаблон-каталога.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50">
@@ -235,11 +264,9 @@ export default function Admin() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Скачайте готовый шаблон со всеми категориями и ID. Заполните столбцы с товарами и импортируйте обратно.
                 </p>
-                <Button asChild variant="outline" size="sm">
-                  <a href="/catalog-template.csv" download="SecurePro-шаблон-каталога.csv">
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Скачать шаблон CSV
-                  </a>
+                <Button variant="outline" size="sm" onClick={downloadCSVTemplate}>
+                  <Icon name="Download" size={16} className="mr-2" />
+                  Скачать шаблон CSV
                 </Button>
               </div>
             </div>
@@ -399,29 +426,64 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="max-h-[500px] overflow-y-auto space-y-2">
+              <div className="max-h-[500px] overflow-y-auto space-y-3">
                 {previewProducts.map((product, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="font-semibold text-lg mb-1">{product.sku}</div>
-                        <div className="text-sm text-muted-foreground mb-2">{product.description}</div>
-                        <div className="flex gap-2 text-xs">
-                          <span className="px-2 py-1 bg-primary/10 text-primary rounded">
-                            {getCategoryName(product.categoryId)}
-                          </span>
-                          <span className="px-2 py-1 bg-secondary rounded">
-                            {getSubcategoryName(product.categoryId, product.subcategoryId)}
-                          </span>
-                          {product.subSubcategoryId && (
-                            <span className="px-2 py-1 bg-accent rounded">
-                              {getSubSubcategoryName(product.categoryId, product.subcategoryId, product.subSubcategoryId)}
-                            </span>
-                          )}
+                  <Card key={index} className="p-4 relative">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="absolute top-2 right-2 h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      onClick={() => removePreviewProduct(index)}
+                    >
+                      <Icon name="X" size={16} />
+                    </Button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Артикул</Label>
+                          <Input 
+                            value={product.sku}
+                            onChange={(e) => updatePreviewProduct(index, 'sku', e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Описание</Label>
+                          <Textarea 
+                            value={product.description}
+                            onChange={(e) => updatePreviewProduct(index, 'description', e.target.value)}
+                            className="mt-1 min-h-[80px]"
+                          />
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">{product.price.toLocaleString('ru-RU')} ₽</div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Цена (₽)</Label>
+                          <Input 
+                            type="number"
+                            value={product.price}
+                            onChange={(e) => updatePreviewProduct(index, 'price', parseInt(e.target.value) || 0)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Категории</Label>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-md text-sm">
+                              {getCategoryName(product.categoryId)}
+                            </span>
+                            <span className="px-3 py-1.5 bg-secondary rounded-md text-sm">
+                              {getSubcategoryName(product.categoryId, product.subcategoryId)}
+                            </span>
+                            {product.subSubcategoryId && (
+                              <span className="px-3 py-1.5 bg-accent rounded-md text-sm">
+                                {getSubSubcategoryName(product.categoryId, product.subcategoryId, product.subSubcategoryId)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </Card>
