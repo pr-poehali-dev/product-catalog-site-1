@@ -20,6 +20,8 @@ interface PreviewProduct {
   subcategoryId: string;
   subSubcategoryId?: string;
   inStock: boolean;
+  manufacturer?: string;
+  specifications?: string;
 }
 
 export default function Admin() {
@@ -31,6 +33,9 @@ export default function Admin() {
   const [importMode, setImportMode] = useState<'manual' | 'csv'>('csv');
   const [previewProducts, setPreviewProducts] = useState<PreviewProduct[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterManufacturer, setFilterManufacturer] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const subcategories = selectedCategory?.subcategories || [];
@@ -66,7 +71,7 @@ export default function Admin() {
         const parts = line.split(',');
         if (parts.length < 10) continue;
 
-        const [, catId, , subCatId, , subSubCatId, sku, code, description, priceStr] = parts;
+        const [, catId, , subCatId, , subSubCatId, sku, code, description, priceStr, manufacturer, specs] = parts;
         
         if (!sku || !description || !priceStr) continue;
         
@@ -81,6 +86,8 @@ export default function Admin() {
           categoryId: catId.trim(),
           subcategoryId: subCatId.trim(),
           subSubcategoryId: subSubCatId?.trim() || undefined,
+          manufacturer: manufacturer?.trim() || undefined,
+          specifications: specs?.trim() || undefined,
           inStock: true
         });
       }
@@ -118,7 +125,7 @@ export default function Admin() {
         const parts = line.split('\t').map(p => p.trim());
         
         if (parts.length >= 4) {
-          const [sku, internalCode, description, priceStr] = parts;
+          const [sku, internalCode, description, priceStr, manufacturer, specs] = parts;
           
           const priceMatch = priceStr.match(/[\d\s]+/);
           const price = priceMatch ? parseInt(priceMatch[0].replace(/\s/g, '')) : 0;
@@ -132,6 +139,8 @@ export default function Admin() {
               categoryId,
               subcategoryId,
               subSubcategoryId: subSubcategoryId || undefined,
+              manufacturer: manufacturer || undefined,
+              specifications: specs || undefined,
               inStock: true
             });
           }
@@ -217,6 +226,23 @@ export default function Admin() {
         URL.revokeObjectURL(url);
       });
   };
+
+  const filteredProducts = previewProducts.filter(product => {
+    if (filterCategory && product.categoryId !== filterCategory) return false;
+    if (filterManufacturer && product.manufacturer !== filterManufacturer) return false;
+    if (filterSearch) {
+      const search = filterSearch.toLowerCase();
+      return (
+        product.sku.toLowerCase().includes(search) ||
+        product.description.toLowerCase().includes(search) ||
+        product.specifications?.toLowerCase().includes(search)
+      );
+    }
+    return true;
+  });
+
+  const uniqueManufacturers = Array.from(new Set(previewProducts.map(p => p.manufacturer).filter(Boolean))) as string[];
+  const uniqueCategories = Array.from(new Set(previewProducts.map(p => p.categoryId)));
 
   return (
     <div className="min-h-screen bg-background">
@@ -404,7 +430,7 @@ export default function Admin() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Icon name="Eye" size={24} />
-                  Предпросмотр импорта ({previewProducts.length} товаров)
+                  Предпросмотр импорта ({filteredProducts.length} из {previewProducts.length})
                 </h2>
                 <div className="flex gap-2">
                   <Button onClick={confirmImport} disabled={importing}>
@@ -426,14 +452,65 @@ export default function Admin() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div>
+                  <Label className="text-sm mb-2 block">Поиск</Label>
+                  <div className="relative">
+                    <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Артикул, описание, характеристики..."
+                      value={filterSearch}
+                      onChange={(e) => setFilterSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm mb-2 block">Категория</Label>
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Все категории" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Все категории</SelectItem>
+                      {uniqueCategories.map(catId => (
+                        <SelectItem key={catId} value={catId}>
+                          {getCategoryName(catId)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm mb-2 block">Производитель</Label>
+                  <Select value={filterManufacturer} onValueChange={setFilterManufacturer}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Все производители" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Все производители</SelectItem>
+                      {uniqueManufacturers.map(mfr => (
+                        <SelectItem key={mfr} value={mfr}>
+                          {mfr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="max-h-[500px] overflow-y-auto space-y-3">
-                {previewProducts.map((product, index) => (
-                  <Card key={index} className="p-4 relative">
+                {filteredProducts.map((product) => {
+                  const originalIndex = previewProducts.indexOf(product);
+                  return (
+                  <Card key={originalIndex} className="p-4 relative">
                     <Button 
                       variant="ghost" 
                       size="sm"
                       className="absolute top-2 right-2 h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      onClick={() => removePreviewProduct(index)}
+                      onClick={() => removePreviewProduct(originalIndex)}
                     >
                       <Icon name="X" size={16} />
                     </Button>
@@ -444,16 +521,25 @@ export default function Admin() {
                           <Label className="text-xs text-muted-foreground">Артикул</Label>
                           <Input 
                             value={product.sku}
-                            onChange={(e) => updatePreviewProduct(index, 'sku', e.target.value)}
+                            onChange={(e) => updatePreviewProduct(originalIndex, 'sku', e.target.value)}
                             className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Производитель</Label>
+                          <Input 
+                            value={product.manufacturer || ''}
+                            onChange={(e) => updatePreviewProduct(originalIndex, 'manufacturer', e.target.value)}
+                            className="mt-1"
+                            placeholder="Не указан"
                           />
                         </div>
                         <div>
                           <Label className="text-xs text-muted-foreground">Описание</Label>
                           <Textarea 
                             value={product.description}
-                            onChange={(e) => updatePreviewProduct(index, 'description', e.target.value)}
-                            className="mt-1 min-h-[80px]"
+                            onChange={(e) => updatePreviewProduct(originalIndex, 'description', e.target.value)}
+                            className="mt-1 min-h-[60px]"
                           />
                         </div>
                       </div>
@@ -464,8 +550,17 @@ export default function Admin() {
                           <Input 
                             type="number"
                             value={product.price}
-                            onChange={(e) => updatePreviewProduct(index, 'price', parseInt(e.target.value) || 0)}
+                            onChange={(e) => updatePreviewProduct(originalIndex, 'price', parseInt(e.target.value) || 0)}
                             className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Характеристики</Label>
+                          <Textarea 
+                            value={product.specifications || ''}
+                            onChange={(e) => updatePreviewProduct(originalIndex, 'specifications', e.target.value)}
+                            className="mt-1 min-h-[60px]"
+                            placeholder="Не указаны"
                           />
                         </div>
                         <div>
@@ -487,7 +582,8 @@ export default function Admin() {
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -499,18 +595,22 @@ export default function Admin() {
             </h3>
             {importMode === 'csv' ? (
               <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>Скачайте шаблон CSV выше</li>
+                <li>Скачайте шаблон CSV выше (с правильной кодировкой UTF-8)</li>
                 <li>Откройте в Excel или Google Sheets</li>
-                <li>Заполните столбцы: Артикул, Код, Описание, Цена</li>
+                <li>Заполните столбцы: Артикул, Код, Описание, Цена, Производитель, Характеристики</li>
                 <li>Сохраните файл в формате CSV</li>
-                <li>Загрузите файл для предпросмотра и подтверждения импорта</li>
+                <li>Загрузите файл для предпросмотра</li>
+                <li>Используйте фильтры для проверки товаров по категориям и производителям</li>
+                <li>Редактируйте нужные поля прямо в предпросмотре</li>
+                <li>Подтвердите импорт</li>
               </ol>
             ) : (
               <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Выберите категорию и подкатегорию для товаров</li>
-                <li>Скопируйте строки из Excel (с колонками: Артикул, Код, Описание, Цена)</li>
+                <li>Скопируйте строки из Excel (колонки: Артикул, Код, Описание, Цена, Производитель, Характеристики)</li>
                 <li>Вставьте данные в текстовое поле</li>
                 <li>Нажмите "Предпросмотр" для проверки данных</li>
+                <li>Используйте фильтры и редактируйте товары при необходимости</li>
                 <li>Подтвердите импорт товаров</li>
               </ol>
             )}
