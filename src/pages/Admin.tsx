@@ -267,8 +267,14 @@ export default function Admin() {
     return true;
   });
 
-  const uniqueManufacturers = Array.from(new Set(previewProducts.map(p => p.manufacturer).filter(m => m && m.trim()))) as string[];
-  const uniqueCategories = Array.from(new Set(previewProducts.map(p => p.categoryId)));
+  const uniqueManufacturers = Array.from(
+    new Set(
+      previewProducts
+        .map(p => p.manufacturer)
+        .filter(m => m && m.trim().length > 0)
+    )
+  ).filter(m => m !== undefined && m !== '') as string[];
+  const uniqueCategories = Array.from(new Set(previewProducts.map(p => p.categoryId).filter(c => c && c.trim().length > 0)));
 
   return (
     <div className="min-h-screen bg-background">
