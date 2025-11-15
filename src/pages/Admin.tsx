@@ -34,7 +34,7 @@ export default function Admin() {
   const [previewProducts, setPreviewProducts] = useState<PreviewProduct[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterManufacturer, setFilterManufacturer] = useState('');
+  const [filterManufacturer, setFilterManufacturer] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
 
   const selectedCategory = categories.find(c => c.id === categoryId);
@@ -229,7 +229,7 @@ export default function Admin() {
 
   const filteredProducts = previewProducts.filter(product => {
     if (filterCategory && product.categoryId !== filterCategory) return false;
-    if (filterManufacturer && product.manufacturer !== filterManufacturer) return false;
+    if (filterManufacturer !== 'all' && product.manufacturer !== filterManufacturer) return false;
     if (filterSearch) {
       const search = filterSearch.toLowerCase();
       return (
@@ -490,7 +490,7 @@ export default function Admin() {
                       <SelectValue placeholder="Все производители" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Все производители</SelectItem>
+                      <SelectItem value="all">Все производители</SelectItem>
                       {uniqueManufacturers.map(mfr => (
                         <SelectItem key={mfr} value={mfr}>
                           {mfr}
