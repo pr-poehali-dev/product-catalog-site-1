@@ -71,7 +71,7 @@ export default function Admin() {
         const parts = line.split(',');
         if (parts.length < 10) continue;
 
-        const [, catId, , subCatId, , subSubCatId, sku, code, description, priceStr, manufacturer, specs] = parts;
+        const [, catId, , subCatId, , subSubCatId, description, sku, specs, manufacturer, priceStr] = parts;
         
         if (!sku || !description || !priceStr) continue;
         
@@ -125,7 +125,7 @@ export default function Admin() {
         const parts = line.split('\t').map(p => p.trim());
         
         if (parts.length >= 4) {
-          const [sku, internalCode, description, priceStr, manufacturer, specs] = parts;
+          const [description, sku, specs, manufacturer, priceStr] = parts;
           
           const priceMatch = priceStr.match(/[\d\s]+/);
           const price = priceMatch ? parseInt(priceMatch[0].replace(/\s/g, '')) : 0;
@@ -398,13 +398,13 @@ export default function Admin() {
               <Label htmlFor="data">Данные товаров *</Label>
               <div className="text-sm text-muted-foreground mb-2">
                 Вставьте строки из таблицы в формате: <br />
-                <code className="bg-muted px-1 py-0.5 rounded">Артикул [TAB] Код [TAB] Описание [TAB] Цена</code>
+                <code className="bg-muted px-1 py-0.5 rounded">Модель [TAB] Артикул [TAB] Характеристики [TAB] Производитель [TAB] Цена</code>
               </div>
               <Textarea
                 id="data"
                 value={importData}
                 onChange={(e) => setImportData(e.target.value)}
-                placeholder="F-IC-2122C2M(2.8mm)	311329188	2Мп уличная цилиндрическая IP-камера...	12 790 ₽"
+                placeholder="DS-2CD2123G0-I	311329188	ИК подсветка 30м, WDR 120дБ	Hikvision	12 790 ₽"
                 className="font-mono text-sm min-h-[300px]"
               />
             </div>
