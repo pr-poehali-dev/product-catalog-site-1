@@ -79,6 +79,11 @@ export default function Admin() {
   };
 
   const parseCSVForPreview = (csvText: string) => {
+    if (!categoryId || !subcategoryId) {
+      toast.error('Выберите категорию и подкатегорию перед загрузкой CSV');
+      return;
+    }
+
     try {
       const lines = csvText.trim().split('\n');
       
@@ -95,9 +100,9 @@ export default function Admin() {
 
         const parts = parseCSVLine(line);
 
-        if (parts.length < 10) continue;
+        if (parts.length < 5) continue;
 
-        const [, catId, , subCatId, , subSubCatId, description, sku, specs, manufacturer, priceStr] = parts;
+        const [description, sku, specs, manufacturer, priceStr] = parts;
         
         if (!sku || !description || !priceStr) continue;
         
@@ -109,9 +114,9 @@ export default function Admin() {
           name: description.trim(),
           description: description.trim(),
           price,
-          categoryId: catId.trim(),
-          subcategoryId: subCatId.trim(),
-          subSubcategoryId: subSubCatId?.trim() || undefined,
+          categoryId,
+          subcategoryId,
+          subSubcategoryId: subSubcategoryId || undefined,
           manufacturer: manufacturer?.trim() || undefined,
           specifications: specs?.trim() || undefined,
           inStock: true
@@ -350,7 +355,63 @@ export default function Admin() {
           </div>
 
           {importMode === 'csv' ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="category">Категория *</Label>
+                <Select value={categoryId} onValueChange={(value) => {
+                  setCategoryId(value);
+                  setSubcategoryId('');
+                }}>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="subcategory">Подкатегория *</Label>
+                <Select value={subcategoryId} onValueChange={(value) => {
+                  setSubcategoryId(value);
+                  setSubSubcategoryId('');
+                }} disabled={!categoryId}>
+                  <SelectTrigger id="subcategory">
+                    <SelectValue placeholder="Выберите подкатегорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subcategories.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {subSubcategories.length > 0 && (
+                <div>
+                  <Label htmlFor="subsubcategory">Разрешение (опционально)</Label>
+                  <Select value={subSubcategoryId || ''} onValueChange={setSubSubcategoryId} disabled={!subcategoryId}>
+                    <SelectTrigger id="subsubcategory">
+                      <SelectValue placeholder="Выберите разрешение" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subSubcategories.map((subsub) => (
+                        <SelectItem key={subsub.id} value={subsub.id}>
+                          {subsub.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="csvFile">Файл CSV с товарами</Label>
                 <div className="mt-2">
@@ -359,7 +420,7 @@ export default function Admin() {
                     type="file"
                     accept=".csv"
                     onChange={handleFileUpload}
-                    disabled={importing}
+                    disabled={importing || !categoryId || !subcategoryId}
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
