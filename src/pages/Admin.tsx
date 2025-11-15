@@ -59,12 +59,15 @@ export default function Admin() {
     let current = '';
     let inQuotes = false;
     
+    // Определяем разделитель: ; для Excel, , для обычного CSV
+    const delimiter = line.includes(';') ? ';' : ',';
+    
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === delimiter && !inQuotes) {
         result.push(current.trim());
         current = '';
       } else {
