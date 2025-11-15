@@ -81,7 +81,6 @@ export default function Admin() {
   const parseCSVForPreview = (csvText: string) => {
     try {
       const lines = csvText.trim().split('\n');
-      console.log('📊 CSV Lines:', lines.length);
       
       if (lines.length < 2) {
         toast.error('CSV файл пустой или неверный формат');
@@ -95,33 +94,15 @@ export default function Admin() {
         if (!line) continue;
 
         const parts = parseCSVLine(line);
-        console.log(`Строка ${i}:`, {
-          parts_length: parts.length,
-          parts: parts,
-          description: parts[6],
-          sku: parts[7],
-          specs: parts[8],
-          manufacturer: parts[9],
-          priceStr: parts[10]
-        });
 
-        if (parts.length < 10) {
-          console.log(`⚠️ Строка ${i} пропущена: мало столбцов (${parts.length})`);
-          continue;
-        }
+        if (parts.length < 10) continue;
 
         const [, catId, , subCatId, , subSubCatId, description, sku, specs, manufacturer, priceStr] = parts;
         
-        if (!sku || !description || !priceStr) {
-          console.log(`⚠️ Строка ${i} пропущена: пустые обязательные поля`, { sku, description, priceStr });
-          continue;
-        }
+        if (!sku || !description || !priceStr) continue;
         
         const price = parseInt(priceStr.replace(/[^\d]/g, ''));
-        if (!price || price <= 0) {
-          console.log(`⚠️ Строка ${i} пропущена: некорректная цена`, { priceStr, price });
-          continue;
-        }
+        if (!price || price <= 0) continue;
 
         productsToAdd.push({
           sku: sku.trim(),
@@ -135,10 +116,7 @@ export default function Admin() {
           specifications: specs?.trim() || undefined,
           inStock: true
         });
-        console.log(`✅ Строка ${i} добавлена`);
       }
-
-      console.log('📦 Всего товаров распознано:', productsToAdd.length);
 
       if (productsToAdd.length === 0) {
         toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов: Модель, Артикул, Цена');
@@ -289,7 +267,7 @@ export default function Admin() {
     return true;
   });
 
-  const uniqueManufacturers = Array.from(new Set(previewProducts.map(p => p.manufacturer).filter(Boolean))) as string[];
+  const uniqueManufacturers = Array.from(new Set(previewProducts.map(p => p.manufacturer).filter(m => m && m.trim()))) as string[];
   const uniqueCategories = Array.from(new Set(previewProducts.map(p => p.categoryId)));
 
   return (
