@@ -54,6 +54,27 @@ export default function Admin() {
     reader.readAsText(file, 'UTF-8');
   };
 
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
   const parseCSVForPreview = (csvText: string) => {
     try {
       const lines = csvText.trim().split('\n');
@@ -68,7 +89,7 @@ export default function Admin() {
         const line = lines[i].trim();
         if (!line) continue;
 
-        const parts = line.split(',');
+        const parts = parseCSVLine(line);
         if (parts.length < 10) continue;
 
         const [, catId, , subCatId, , subSubCatId, description, sku, specs, manufacturer, priceStr] = parts;
@@ -80,8 +101,8 @@ export default function Admin() {
 
         productsToAdd.push({
           sku: sku.trim(),
-          name: sku.trim(),
-          description: description.trim().replace(/^"|"$/g, ''),
+          name: description.trim(),
+          description: description.trim(),
           price,
           categoryId: catId.trim(),
           subcategoryId: subCatId.trim(),
@@ -93,7 +114,7 @@ export default function Admin() {
       }
 
       if (productsToAdd.length === 0) {
-        toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов Артикул, Описание, Цена');
+        toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов: Модель, Артикул, Цена');
         return;
       }
 
