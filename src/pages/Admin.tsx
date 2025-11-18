@@ -130,6 +130,7 @@ export default function Admin() {
 
       setPreviewProducts(productsToAdd);
       setShowPreview(true);
+      toast.success(`Загружено ${productsToAdd.length} товаров для предпросмотра`);
       
     } catch (error) {
       console.error('CSV Parse error:', error);
