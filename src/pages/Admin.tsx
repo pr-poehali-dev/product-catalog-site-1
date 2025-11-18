@@ -102,17 +102,17 @@ export default function Admin() {
 
         if (parts.length < 5) continue;
 
-        const [description, sku, specs, manufacturer, priceStr] = parts;
+        const [model, sku, specs, manufacturer, priceStr] = parts;
         
-        if (!sku || !description || !priceStr) continue;
+        if (!sku || !model || !priceStr) continue;
         
         const price = parseInt(priceStr.replace(/[^\d]/g, ''));
         if (!price || price <= 0) continue;
 
         productsToAdd.push({
           sku: sku.trim(),
-          name: description.trim(),
-          description: description.trim(),
+          name: model.trim(),
+          description: model.trim(),
           price,
           categoryId,
           subcategoryId,
