@@ -63,16 +63,21 @@ export default function Admin() {
     const result: string[] = [];
     let current = '';
     let inQuotes = false;
-    
-    // Определяем разделитель: ; для Excel, , для обычного CSV
-    const delimiter = line.includes(';') ? ';' : ',';
+    const delimiter = ';';
     
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
+      const nextChar = line[i + 1];
       
-      if (char === '"') {
+      if (char === '"' && nextChar === '"') {
+        // Двойные кавычки - это экранированная кавычка
+        current += '"';
+        i++; // Пропускаем следующую кавычку
+      } else if (char === '"') {
+        // Переключаем режим кавычек
         inQuotes = !inQuotes;
       } else if (char === delimiter && !inQuotes) {
+        // Разделитель вне кавычек
         result.push(current.trim());
         current = '';
       } else {
@@ -90,40 +95,76 @@ export default function Admin() {
     }
 
     try {
-      const lines = csvText.trim().split('\n');
+      // Парсим CSV с учётом кавычек и переносов строк
+      const rows: string[][] = [];
+      let currentRow: string[] = [];
+      let currentCell = '';
+      let inQuotes = false;
       
-      console.log('CSV lines:', lines.length);
+      for (let i = 0; i < csvText.length; i++) {
+        const char = csvText[i];
+        const nextChar = csvText[i + 1];
+        
+        if (char === '"' && nextChar === '"' && inQuotes) {
+          currentCell += '"';
+          i++;
+        } else if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ';' && !inQuotes) {
+          currentRow.push(currentCell.trim());
+          currentCell = '';
+        } else if (char === '\n' && !inQuotes) {
+          currentRow.push(currentCell.trim());
+          if (currentRow.some(c => c.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentCell = '';
+        } else if (char === '\r') {
+          // Пропускаем \r
+          continue;
+        } else {
+          currentCell += char;
+        }
+      }
       
-      if (lines.length < 2) {
+      // Добавляем последнюю ячейку и строку
+      if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        if (currentRow.some(c => c.length > 0)) {
+          rows.push(currentRow);
+        }
+      }
+      
+      console.log('Parsed rows:', rows.length);
+      
+      if (rows.length < 2) {
         toast.error('CSV файл пустой или неверный формат');
         return;
       }
 
       const productsToAdd: PreviewProduct[] = [];
       
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const parts = parseCSVLine(line);
+      for (let i = 1; i < rows.length; i++) {
+        const parts = rows[i];
         
-        console.log(`Line ${i} parts:`, parts);
+        console.log(`Row ${i} parts:`, parts);
 
         if (parts.length < 5) {
-          console.log(`Skipping line ${i}: not enough parts (${parts.length})`);
+          console.log(`Skipping row ${i}: not enough parts (${parts.length})`);
           continue;
         }
 
         const [model, sku, specs, manufacturer, priceStr] = parts;
         
         if (!sku || !model || !priceStr) {
-          console.log(`Skipping line ${i}: missing required fields`, {model, sku, priceStr});
+          console.log(`Skipping row ${i}: missing required fields`, {model, sku, priceStr});
           continue;
         }
         
         const price = parseInt(priceStr.replace(/[^\d]/g, ''));
         if (!price || price <= 0) {
-          console.log(`Skipping line ${i}: invalid price`, priceStr);
+          console.log(`Skipping row ${i}: invalid price`, priceStr);
           continue;
         }
 
