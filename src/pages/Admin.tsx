@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +24,8 @@ interface PreviewProduct {
   specifications?: string;
 }
 
+const PREVIEW_STORAGE_KEY = 'admin_preview_products';
+
 export default function Admin() {
   const [categoryId, setCategoryId] = useState('');
   const [subcategoryId, setSubcategoryId] = useState('');
@@ -36,6 +38,37 @@ export default function Admin() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterManufacturer, setFilterManufacturer] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(PREVIEW_STORAGE_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        setPreviewProducts(data.products || []);
+        setShowPreview(data.products?.length > 0);
+        setCategoryId(data.categoryId || '');
+        setSubcategoryId(data.subcategoryId || '');
+        setSubSubcategoryId(data.subSubcategoryId || '');
+      }
+    } catch (e) {
+      console.error('Failed to restore preview:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (previewProducts.length > 0) {
+      try {
+        sessionStorage.setItem(PREVIEW_STORAGE_KEY, JSON.stringify({
+          products: previewProducts,
+          categoryId,
+          subcategoryId,
+          subSubcategoryId
+        }));
+      } catch (e) {
+        console.error('Failed to save preview:', e);
+      }
+    }
+  }, [previewProducts, categoryId, subcategoryId, subSubcategoryId]);
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const subcategories = selectedCategory?.subcategories || [];
@@ -268,6 +301,7 @@ export default function Admin() {
       setPreviewProducts([]);
       setShowPreview(false);
       setImportData('');
+      sessionStorage.removeItem(PREVIEW_STORAGE_KEY);
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Ошибка при импорте товаров');
@@ -279,6 +313,7 @@ export default function Admin() {
   const cancelPreview = () => {
     setPreviewProducts([]);
     setShowPreview(false);
+    sessionStorage.removeItem(PREVIEW_STORAGE_KEY);
   };
 
   const getCategoryName = (catId: string) => {
