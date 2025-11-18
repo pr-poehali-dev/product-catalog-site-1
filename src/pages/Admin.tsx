@@ -22,6 +22,7 @@ interface PreviewProduct {
   inStock: boolean;
   manufacturer?: string;
   specifications?: string;
+  isDuplicate?: boolean;
 }
 
 const PREVIEW_STORAGE_KEY = 'admin_preview_products';
@@ -38,6 +39,15 @@ export default function Admin() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterManufacturer, setFilterManufacturer] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+  const [showDuplicates, setShowDuplicates] = useState(true);
+
+  const checkDuplicates = (productsToCheck: PreviewProduct[]) => {
+    const existingSkus = new Set(products.map(p => p.sku.toLowerCase()));
+    return productsToCheck.map(product => ({
+      ...product,
+      isDuplicate: existingSkus.has(product.sku.toLowerCase())
+    }));
+  };
 
   useEffect(() => {
     try {
@@ -224,9 +234,17 @@ export default function Admin() {
         return;
       }
 
-      setPreviewProducts(productsToAdd);
+      const productsWithDuplicates = checkDuplicates(productsToAdd);
+      const duplicateCount = productsWithDuplicates.filter(p => p.isDuplicate).length;
+      
+      setPreviewProducts(productsWithDuplicates);
       setShowPreview(true);
-      toast.success(`Загружено ${productsToAdd.length} товаров для предпросмотра`);
+      
+      if (duplicateCount > 0) {
+        toast.warning(`Загружено ${productsToAdd.length} товаров. Найдено дубликатов: ${duplicateCount}`, { duration: 5000 });
+      } else {
+        toast.success(`Загружено ${productsToAdd.length} товаров для предпросмотра`);
+      }
       
       setTimeout(() => {
         document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -284,8 +302,15 @@ export default function Admin() {
         return;
       }
 
-      setPreviewProducts(productsToAdd);
+      const productsWithDuplicates = checkDuplicates(productsToAdd);
+      const duplicateCount = productsWithDuplicates.filter(p => p.isDuplicate).length;
+      
+      setPreviewProducts(productsWithDuplicates);
       setShowPreview(true);
+      
+      if (duplicateCount > 0) {
+        toast.warning(`Загружено ${productsToAdd.length} товаров. Найдено дубликатов: ${duplicateCount}`, { duration: 5000 });
+      }
       
     } catch (error) {
       console.error('Parse error:', error);
@@ -379,6 +404,7 @@ export default function Admin() {
   };
 
   const filteredProducts = previewProducts.filter(product => {
+    if (!showDuplicates && product.isDuplicate) return false;
     if (filterCategory && filterCategory !== 'all' && product.categoryId !== filterCategory) return false;
     if (filterManufacturer !== 'all' && product.manufacturer !== filterManufacturer) return false;
     if (filterSearch) {
@@ -391,6 +417,8 @@ export default function Admin() {
     }
     return true;
   });
+  
+  const duplicateCount = previewProducts.filter(p => p.isDuplicate).length;
 
   const uniqueManufacturers = Array.from(
     new Set(
@@ -651,10 +679,18 @@ export default function Admin() {
           {showPreview && previewProducts.length > 0 && (
             <div id="preview-section" className="mt-6 border-t pt-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Icon name="Eye" size={24} />
-                  Предпросмотр импорта ({filteredProducts.length} из {previewProducts.length})
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Icon name="Eye" size={24} />
+                    Предпросмотр импорта ({filteredProducts.length} из {previewProducts.length})
+                  </h2>
+                  {duplicateCount > 0 && (
+                    <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1">
+                      <Icon name="AlertTriangle" size={16} />
+                      Найдено дубликатов: {duplicateCount} (они будут пропущены при импорте)
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={confirmImport} disabled={importing}>
                     {importing ? (
@@ -675,13 +711,13 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
                 <div>
                   <Label className="text-sm mb-2 block">Поиск</Label>
                   <div className="relative">
                     <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Артикул, описание, характеристики..."
+                      placeholder="Артикул, описание..."
                       value={filterSearch}
                       onChange={(e) => setFilterSearch(e.target.value)}
                       className="pl-10"
@@ -722,13 +758,31 @@ export default function Admin() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <Label className="text-sm mb-2 block">Дубликаты</Label>
+                  <Button
+                    variant={showDuplicates ? "outline" : "secondary"}
+                    className="w-full justify-start"
+                    onClick={() => setShowDuplicates(!showDuplicates)}
+                  >
+                    <Icon name={showDuplicates ? "Eye" : "EyeOff"} size={18} className="mr-2" />
+                    {showDuplicates ? "Показать" : "Скрыть"}
+                  </Button>
+                </div>
               </div>
 
               <div className="max-h-[500px] overflow-y-auto space-y-3">
                 {filteredProducts.map((product) => {
                   const originalIndex = previewProducts.indexOf(product);
                   return (
-                  <Card key={originalIndex} className="p-4 relative">
+                  <Card key={originalIndex} className={`p-4 relative ${product.isDuplicate ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' : ''}`}>
+                    {product.isDuplicate && (
+                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs rounded-md">
+                        <Icon name="AlertTriangle" size={14} />
+                        Дубликат
+                      </div>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -738,7 +792,7 @@ export default function Admin() {
                       <Icon name="X" size={16} />
                     </Button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${product.isDuplicate ? 'pr-10 pl-24' : 'pr-10'}`}>
                       <div className="space-y-3">
                         <div>
                           <Label className="text-xs text-muted-foreground">Артикул</Label>
