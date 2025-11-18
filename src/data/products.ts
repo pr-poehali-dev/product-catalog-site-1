@@ -21,15 +21,33 @@ function saveProducts(products: Product[]) {
 
 export const products: Product[] = loadProducts();
 
-export function addProducts(newProducts: Omit<Product, 'id'>[]): Product[] {
-  const productsWithIds = newProducts.map((product, index) => ({
-    ...product,
-    id: `${product.sku || Date.now()}-${index}`
-  }));
+export function addProducts(newProducts: Omit<Product, 'id'>[]): { added: Product[], skipped: Product[], duplicates: string[] } {
+  const existingSkus = new Set(products.map(p => p.sku.toLowerCase()));
+  const added: Product[] = [];
+  const skipped: Product[] = [];
+  const duplicates: string[] = [];
   
-  products.push(...productsWithIds);
-  saveProducts(products);
-  return productsWithIds;
+  for (const newProduct of newProducts) {
+    const skuLower = newProduct.sku.toLowerCase();
+    if (existingSkus.has(skuLower)) {
+      duplicates.push(newProduct.sku);
+      skipped.push(newProduct as Product);
+    } else {
+      const productWithId = {
+        ...newProduct,
+        id: `${newProduct.sku}-${Date.now()}-${added.length}`
+      };
+      products.push(productWithId);
+      added.push(productWithId);
+      existingSkus.add(skuLower);
+    }
+  }
+  
+  if (added.length > 0) {
+    saveProducts(products);
+  }
+  
+  return { added, skipped, duplicates };
 }
 
 export function getProductsBySubcategory(subcategoryId: string): Product[] {
@@ -47,4 +65,9 @@ export function searchProducts(query: string): Product[] {
     p.description.toLowerCase().includes(lowerQuery) ||
     p.sku.toLowerCase().includes(lowerQuery)
   );
+}
+
+export function clearAllProducts(): void {
+  products.length = 0;
+  saveProducts(products);
 }

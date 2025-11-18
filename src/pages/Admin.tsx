@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { categories } from '@/data/categories';
-import { addProducts } from '@/data/products';
+import { addProducts, clearAllProducts, products } from '@/data/products';
 import { toast } from 'sonner';
 
 interface PreviewProduct {
@@ -296,8 +296,17 @@ export default function Admin() {
   const confirmImport = () => {
     setImporting(true);
     try {
-      addProducts(previewProducts);
-      toast.success(`Импортировано товаров: ${previewProducts.length}`);
+      const result = addProducts(previewProducts);
+      
+      if (result.duplicates.length > 0) {
+        toast.warning(
+          `Импортировано: ${result.added.length}, пропущено дубликатов: ${result.duplicates.length}`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success(`Импортировано товаров: ${result.added.length}`);
+      }
+      
       setPreviewProducts([]);
       setShowPreview(false);
       setImportData('');
@@ -314,6 +323,14 @@ export default function Admin() {
     setPreviewProducts([]);
     setShowPreview(false);
     sessionStorage.removeItem(PREVIEW_STORAGE_KEY);
+  };
+
+  const handleClearCatalog = () => {
+    if (window.confirm(`Удалить все товары из каталога (${products.length} шт.)? Это действие нельзя отменить.`)) {
+      clearAllProducts();
+      toast.success('Каталог очищен');
+      window.location.reload();
+    }
   };
 
   const getCategoryName = (catId: string) => {
@@ -398,6 +415,16 @@ export default function Admin() {
             </div>
 
             <div className="flex gap-2">
+              {products.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleClearCatalog}
+                >
+                  <Icon name="Trash2" size={18} className="mr-2" />
+                  Очистить каталог ({products.length})
+                </Button>
+              )}
               <Link to="/catalog">
                 <Button variant="outline">
                   <Icon name="LayoutGrid" size={20} className="mr-2" />
