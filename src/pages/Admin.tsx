@@ -132,6 +132,10 @@ export default function Admin() {
       setShowPreview(true);
       toast.success(`Загружено ${productsToAdd.length} товаров для предпросмотра`);
       
+      setTimeout(() => {
+        document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      
     } catch (error) {
       console.error('CSV Parse error:', error);
       toast.error('Ошибка при чтении CSV');
@@ -520,7 +524,7 @@ export default function Admin() {
           )}
 
           {showPreview && previewProducts.length > 0 && (
-            <div className="mt-6 border-t pt-6">
+            <div id="preview-section" className="mt-6 border-t pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Icon name="Eye" size={24} />
