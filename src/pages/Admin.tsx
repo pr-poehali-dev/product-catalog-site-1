@@ -33,7 +33,7 @@ export default function Admin() {
   const [importMode, setImportMode] = useState<'manual' | 'csv'>('csv');
   const [previewProducts, setPreviewProducts] = useState<PreviewProduct[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [filterManufacturer, setFilterManufacturer] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
 
@@ -264,7 +264,7 @@ export default function Admin() {
   };
 
   const filteredProducts = previewProducts.filter(product => {
-    if (filterCategory && product.categoryId !== filterCategory) return false;
+    if (filterCategory && filterCategory !== 'all' && product.categoryId !== filterCategory) return false;
     if (filterManufacturer !== 'all' && product.manufacturer !== filterManufacturer) return false;
     if (filterSearch) {
       const search = filterSearch.toLowerCase();
@@ -571,7 +571,7 @@ export default function Admin() {
                       <SelectValue placeholder="Все категории" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Все категории</SelectItem>
+                      <SelectItem value="all">Все категории</SelectItem>
                       {uniqueCategories.map(catId => (
                         <SelectItem key={catId} value={catId}>
                           {getCategoryName(catId)}
