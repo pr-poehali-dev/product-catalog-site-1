@@ -50,6 +50,11 @@ export default function Admin() {
     reader.onload = (e) => {
       const text = e.target?.result as string;
       parseCSVForPreview(text);
+      event.target.value = '';
+    };
+    reader.onerror = () => {
+      toast.error('Ошибка чтения файла');
+      event.target.value = '';
     };
     reader.readAsText(file, 'UTF-8');
   };
@@ -87,6 +92,8 @@ export default function Admin() {
     try {
       const lines = csvText.trim().split('\n');
       
+      console.log('CSV lines:', lines.length);
+      
       if (lines.length < 2) {
         toast.error('CSV файл пустой или неверный формат');
         return;
@@ -99,15 +106,26 @@ export default function Admin() {
         if (!line) continue;
 
         const parts = parseCSVLine(line);
+        
+        console.log(`Line ${i} parts:`, parts);
 
-        if (parts.length < 5) continue;
+        if (parts.length < 5) {
+          console.log(`Skipping line ${i}: not enough parts (${parts.length})`);
+          continue;
+        }
 
         const [model, sku, specs, manufacturer, priceStr] = parts;
         
-        if (!sku || !model || !priceStr) continue;
+        if (!sku || !model || !priceStr) {
+          console.log(`Skipping line ${i}: missing required fields`, {model, sku, priceStr});
+          continue;
+        }
         
         const price = parseInt(priceStr.replace(/[^\d]/g, ''));
-        if (!price || price <= 0) continue;
+        if (!price || price <= 0) {
+          console.log(`Skipping line ${i}: invalid price`, priceStr);
+          continue;
+        }
 
         productsToAdd.push({
           sku: sku.trim(),
@@ -122,6 +140,8 @@ export default function Admin() {
           inStock: true
         });
       }
+      
+      console.log('Products to add:', productsToAdd.length);
 
       if (productsToAdd.length === 0) {
         toast.error('Не найдено товаров для импорта. Проверьте заполнение столбцов: Модель, Артикул, Цена');
