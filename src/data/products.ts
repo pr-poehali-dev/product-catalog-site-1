@@ -1,6 +1,25 @@
 import { Product } from '@/types/catalog';
 
-export const products: Product[] = [];
+const STORAGE_KEY = 'catalog_products';
+
+function loadProducts(): Product[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProducts(products: Product[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.error('Failed to save products:', e);
+  }
+}
+
+export const products: Product[] = loadProducts();
 
 export function addProducts(newProducts: Omit<Product, 'id'>[]): Product[] {
   const productsWithIds = newProducts.map((product, index) => ({
@@ -9,6 +28,7 @@ export function addProducts(newProducts: Omit<Product, 'id'>[]): Product[] {
   }));
   
   products.push(...productsWithIds);
+  saveProducts(products);
   return productsWithIds;
 }
 
