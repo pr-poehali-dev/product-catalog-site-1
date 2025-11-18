@@ -162,7 +162,9 @@ export default function Admin() {
           continue;
         }
         
-        const price = parseInt(priceStr.replace(/[^\d]/g, ''));
+        // Убираем всё после запятой (дробную часть) и парсим только целую часть
+        const priceClean = priceStr.split(',')[0].replace(/[^\d]/g, '');
+        const price = parseInt(priceClean);
         if (!price || price <= 0) {
           console.log(`Skipping row ${i}: invalid price`, priceStr);
           continue;
