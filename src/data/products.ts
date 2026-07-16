@@ -2,21 +2,27 @@ import { Product } from '@/types/catalog';
 import { seedProducts } from './seedProducts';
 
 const STORAGE_KEY = 'catalog_products';
+const SEED_VERSION_KEY = 'catalog_seed_version';
+const SEED_VERSION = 'dahua-price-v1';
 
 function loadProducts(): Product[] {
   try {
+    const seedVersion = localStorage.getItem(SEED_VERSION_KEY);
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+
+    if (stored && seedVersion === SEED_VERSION) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     }
+
     const initialProducts = seedProducts.map((p, index) => ({
       ...p,
       id: `${p.sku}-seed-${index}`
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProducts));
+    localStorage.setItem(SEED_VERSION_KEY, SEED_VERSION);
     return initialProducts;
   } catch {
     return [];
