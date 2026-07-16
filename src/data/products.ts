@@ -1,11 +1,20 @@
 import { Product } from '@/types/catalog';
+import { seedProducts } from './seedProducts';
 
 const STORAGE_KEY = 'catalog_products';
 
 function loadProducts(): Product[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    const initialProducts = seedProducts.map((p, index) => ({
+      ...p,
+      id: `${p.sku}-seed-${index}`
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProducts));
+    return initialProducts;
   } catch {
     return [];
   }
