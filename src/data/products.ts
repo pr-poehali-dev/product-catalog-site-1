@@ -7,7 +7,10 @@ function loadProducts(): Product[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
     }
     const initialProducts = seedProducts.map((p, index) => ({
       ...p,
