@@ -9,6 +9,7 @@ export interface Product {
   subcategoryId: string;
   subSubcategoryId?: string;
   specs?: Record<string, string>;
+  megapixels?: number;
   inStock?: boolean;
 }
 

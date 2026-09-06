@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,13 @@ export default function Catalog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedMp, setSelectedMp] = useState<number | null>(null);
 
   const currentCategory = categorySlug ? getCategoryBySlug(categorySlug) : null;
   const currentSubcategory = currentCategory?.subcategories.find(sub => sub.slug === subcategorySlug);
   const currentSubSubcategory = currentSubcategory?.subSubcategories?.find(sub => sub.slug === subSubcategorySlug);
 
-  const displayedProducts = useMemo(() => {
+  const categoryFilteredProducts = useMemo(() => {
     if (searchQuery.trim()) {
       return searchProducts(searchQuery);
     }
@@ -40,6 +41,23 @@ export default function Catalog() {
 
     return products;
   }, [searchQuery, currentCategory, currentSubcategory, currentSubSubcategory]);
+
+  const availableMpOptions = useMemo(() => {
+    const mps = new Set<number>();
+    categoryFilteredProducts.forEach(p => {
+      if (p.megapixels) mps.add(p.megapixels);
+    });
+    return Array.from(mps).sort((a, b) => a - b);
+  }, [categoryFilteredProducts]);
+
+  const displayedProducts = useMemo(() => {
+    if (selectedMp === null) return categoryFilteredProducts;
+    return categoryFilteredProducts.filter(p => p.megapixels === selectedMp);
+  }, [categoryFilteredProducts, selectedMp]);
+
+  useEffect(() => {
+    setSelectedMp(null);
+  }, [categorySlug, subcategorySlug, subSubcategorySlug, searchQuery]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -133,6 +151,29 @@ export default function Catalog() {
               </p>
             )}
           </div>
+
+          {availableMpOptions.length > 1 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground mr-1">Мегапиксели:</span>
+              <Button
+                size="sm"
+                variant={selectedMp === null ? 'default' : 'outline'}
+                onClick={() => setSelectedMp(null)}
+              >
+                Все
+              </Button>
+              {availableMpOptions.map(mp => (
+                <Button
+                  key={mp}
+                  size="sm"
+                  variant={selectedMp === mp ? 'default' : 'outline'}
+                  onClick={() => setSelectedMp(mp)}
+                >
+                  {mp} Мп
+                </Button>
+              ))}
+            </div>
+          )}
 
           {displayedProducts.length === 0 ? (
             <div className="text-center py-16">
