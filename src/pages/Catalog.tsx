@@ -8,7 +8,7 @@ import CatalogNav from '@/components/catalog/CatalogNav';
 import ProductCard from '@/components/catalog/ProductCard';
 import { Product, CartItem } from '@/types/catalog';
 import { getCategoryBySlug, getSubcategoryById, categories } from '@/data/categories';
-import { products, searchProducts } from '@/data/products';
+import { products, searchProducts, getProductCountByCategory, getProductCountBySubcategory } from '@/data/products';
 import { toast } from 'sonner';
 
 export default function Catalog() {
@@ -58,6 +58,10 @@ export default function Catalog() {
   useEffect(() => {
     setSelectedMp(null);
   }, [categorySlug, subcategorySlug, subSubcategorySlug, searchQuery]);
+
+  const isSearching = searchQuery.trim().length > 0;
+  const showCategoryCards = !isSearching && !currentCategory;
+  const showSubcategoryCards = !isSearching && !!currentCategory && !currentSubcategory;
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -143,68 +147,114 @@ export default function Catalog() {
             </div>
 
             <h1 className="text-3xl font-bold mb-2">
-              {currentSubSubcategory?.name || currentSubcategory?.name || currentCategory?.name || 'Каталог товаров'}
+              {isSearching
+                ? `Результаты поиска: «${searchQuery}»`
+                : currentSubSubcategory?.name || currentSubcategory?.name || currentCategory?.name || 'Каталог товаров'}
             </h1>
-            {(currentCategory || currentSubcategory || currentSubSubcategory) && (
+            {!isSearching && (currentCategory || currentSubcategory || currentSubSubcategory) && (
               <p className="text-muted-foreground">
                 {currentSubcategory?.description || currentCategory?.description}
               </p>
             )}
+            {showCategoryCards && (
+              <p className="text-muted-foreground">
+                Выберите раздел, чтобы посмотреть товары — всего {products.length} товаров в {categories.length} разделах
+              </p>
+            )}
           </div>
 
-          {availableMpOptions.length > 1 && (
-            <div className="mb-6 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground mr-1">Мегапиксели:</span>
-              <Button
-                size="sm"
-                variant={selectedMp === null ? 'default' : 'outline'}
-                onClick={() => setSelectedMp(null)}
-              >
-                Все
-              </Button>
-              {availableMpOptions.map(mp => (
-                <Button
-                  key={mp}
-                  size="sm"
-                  variant={selectedMp === mp ? 'default' : 'outline'}
-                  onClick={() => setSelectedMp(mp)}
+          {showCategoryCards ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/catalog/${category.slug}`}
+                  className="group flex items-center gap-4 p-4 rounded-xl border bg-card hover:border-primary hover:shadow-md transition-all"
                 >
-                  {mp} Мп
-                </Button>
+                  <div className="shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    {category.icon && <Icon name={category.icon as any} size={24} className="text-primary" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold truncate group-hover:text-primary transition-colors">{category.name}</div>
+                    <div className="text-sm text-muted-foreground">{getProductCountByCategory(category.id)} товаров</div>
+                  </div>
+                  <Icon name="ChevronRight" size={20} className="text-muted-foreground shrink-0" />
+                </Link>
               ))}
             </div>
-          )}
-
-          {displayedProducts.length === 0 ? (
-            <div className="text-center py-16">
-              <Icon name="Package" size={64} className="mx-auto text-muted-foreground/30 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Товары не найдены</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery 
-                  ? 'Попробуйте изменить параметры поиска'
-                  : 'В этой категории пока нет товаров'}
-              </p>
-              {searchQuery && (
-                <Button onClick={() => setSearchQuery('')} variant="outline">
-                  Сбросить поиск
-                </Button>
-              )}
+          ) : showSubcategoryCards ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentCategory!.subcategories.map((sub) => (
+                <Link
+                  key={sub.id}
+                  to={`/catalog/${currentCategory!.slug}/${sub.slug}`}
+                  className="group flex items-center gap-4 p-4 rounded-xl border bg-card hover:border-primary hover:shadow-md transition-all"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate group-hover:text-primary transition-colors">{sub.name}</div>
+                    <div className="text-sm text-muted-foreground">{getProductCountBySubcategory(sub.id)} товаров</div>
+                  </div>
+                  <Icon name="ChevronRight" size={20} className="text-muted-foreground shrink-0" />
+                </Link>
+              ))}
             </div>
           ) : (
             <>
-              <div className="mb-4 text-sm text-muted-foreground">
-                Найдено товаров: {displayedProducts.length}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {displayedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={addToCart}
-                    onViewDetails={setSelectedProduct}
-                  />
-                ))}
-              </div>
+              {availableMpOptions.length > 1 && (
+                <div className="mb-6 flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground mr-1">Мегапиксели:</span>
+                  <Button
+                    size="sm"
+                    variant={selectedMp === null ? 'default' : 'outline'}
+                    onClick={() => setSelectedMp(null)}
+                  >
+                    Все
+                  </Button>
+                  {availableMpOptions.map(mp => (
+                    <Button
+                      key={mp}
+                      size="sm"
+                      variant={selectedMp === mp ? 'default' : 'outline'}
+                      onClick={() => setSelectedMp(mp)}
+                    >
+                      {mp} Мп
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {displayedProducts.length === 0 ? (
+                <div className="text-center py-16">
+                  <Icon name="Package" size={64} className="mx-auto text-muted-foreground/30 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Товары не найдены</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchQuery 
+                      ? 'Попробуйте изменить параметры поиска'
+                      : 'В этой категории пока нет товаров'}
+                  </p>
+                  {searchQuery && (
+                    <Button onClick={() => setSearchQuery('')} variant="outline">
+                      Сбросить поиск
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 text-sm text-muted-foreground">
+                    Найдено товаров: {displayedProducts.length}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {displayedProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={addToCart}
+                        onViewDetails={setSelectedProduct}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </main>

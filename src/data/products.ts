@@ -3,7 +3,7 @@ import { seedProducts } from './seedProducts';
 
 const STORAGE_KEY = 'catalog_products';
 const SEED_VERSION_KEY = 'catalog_seed_version';
-const SEED_VERSION = 'dahua-price-v5-full-images';
+const SEED_VERSION = 'dahua-price-v6-fixed-mp';
 
 function loadProducts(): Product[] {
   try {
@@ -74,6 +74,14 @@ export function getProductsBySubcategory(subcategoryId: string): Product[] {
 
 export function getProductsByCategory(categoryId: string): Product[] {
   return products.filter(p => p.categoryId === categoryId);
+}
+
+export function getProductCountByCategory(categoryId: string): number {
+  return products.filter(p => p.categoryId === categoryId).length;
+}
+
+export function getProductCountBySubcategory(subcategoryId: string): number {
+  return products.filter(p => p.subcategoryId === subcategoryId).length;
 }
 
 export function searchProducts(query: string): Product[] {
