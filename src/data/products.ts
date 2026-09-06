@@ -3,7 +3,7 @@ import { seedProducts } from './seedProducts';
 
 const STORAGE_KEY = 'catalog_products';
 const SEED_VERSION_KEY = 'catalog_seed_version';
-const SEED_VERSION = 'dahua-price-v2-images';
+const SEED_VERSION = 'dahua-price-v3-full-catalog';
 
 function loadProducts(): Product[] {
   try {
