@@ -3,7 +3,8 @@ import { toast } from 'sonner';
 import HomeHeader from '@/components/home/HomeHeader';
 import HeroCatalogSection from '@/components/home/HeroCatalogSection';
 import CatalogSectionsGrid from '@/components/home/CatalogSectionsGrid';
-import AboutDeliveryFaqSection from '@/components/home/AboutDeliveryFaqSection';
+import StepsSection from '@/components/home/StepsSection';
+import CompanyStrip from '@/components/home/CompanyStrip';
 import ContactsSection from '@/components/home/ContactsSection';
 import SiteFooter from '@/components/home/SiteFooter';
 import { CartItem } from '@/components/home/productsData';
@@ -67,7 +68,9 @@ export default function Index() {
 
         <CatalogSectionsGrid />
 
-        <AboutDeliveryFaqSection />
+        <StepsSection />
+
+        <CompanyStrip />
 
         <ContactsSection />
       </main>

@@ -40,33 +40,32 @@ export default function HomeHeader({
   handleSubmitRequest
 }: HomeHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/95 border-b border-border">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[hsl(var(--dark))] text-white border-b border-white/10">
+      <nav className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Icon name="Shield" className="text-primary" size={36} />
             <div>
               <div className="text-2xl font-heading font-bold">SecurePro</div>
-              <div className="text-xs text-muted-foreground">Системы безопасности</div>
+              <div className="text-xs text-white/60">Системы безопасности</div>
             </div>
           </div>
 
           <div className="hidden md:flex items-center gap-6">
             <Link to="/catalog">
-              <Button variant="ghost">Каталог</Button>
+              <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white">Каталог</Button>
             </Link>
             {[
-              { id: 'home', label: 'Главная' },
-              { id: 'about', label: 'О компании' },
-              { id: 'delivery', label: 'Доставка' },
-              { id: 'faq', label: 'FAQ' },
+              { id: 'catalog', label: 'Разделы' },
+              { id: 'steps', label: 'Этапы работы' },
+              { id: 'about', label: 'О нас' },
               { id: 'contacts', label: 'Контакты' }
             ].map(item => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`text-sm transition-colors hover:text-primary ${
-                  activeSection === item.id ? 'text-primary font-medium' : 'text-muted-foreground'
+                className={`text-sm uppercase tracking-wide transition-colors hover:text-primary ${
+                  activeSection === item.id ? 'text-primary font-medium' : 'text-white/70'
                 }`}
               >
                 {item.label}
@@ -74,9 +73,13 @@ export default function HomeHeader({
             ))}
           </div>
 
+          <a href="tel:+78127700670" className="hidden lg:block font-bold whitespace-nowrap hover:text-primary transition-colors">
+            +7 (812) 770-06-70
+          </a>
+
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
+              <Button variant="outline" size="icon" className="relative bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white">
                 <Icon name="FileText" size={20} />
                 {cart.length > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">

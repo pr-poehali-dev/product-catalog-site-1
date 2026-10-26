@@ -16,30 +16,41 @@ export default function CatalogSectionsGrid() {
     .filter((c): c is NonNullable<typeof c> => !!c);
 
   return (
-    <section id="catalog" className="py-20 bg-secondary/30">
+    <section id="catalog" className="py-16 md:py-24 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4">Каталог оборудования</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {products.length} товаров в {categories.length} разделах. Выберите направление
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl md:text-5xl font-heading font-bold mb-2">Наши разделы</h2>
+            <p className="text-muted-foreground">
+              {products.length} товаров в {categories.length} разделах
+            </p>
+          </div>
+          <Link to="/catalog">
+            <Button variant="outline" className="px-6">
+              Весь каталог
+              <Icon name="ArrowRight" className="ml-2" size={18} />
+            </Button>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featured.map(category => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {featured.map((category, index) => {
             const cover = COVER_OVERRIDES[category.id] ?? products.find(p => p.categoryId === category.id && p.image)?.image;
             return (
               <Link
                 key={category.id}
                 to={`/catalog/${category.slug}`}
-                className="group rounded-xl border bg-card overflow-hidden hover:border-primary hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                className="group rounded-lg border bg-white overflow-hidden hover:border-primary hover:shadow-lg transition-all duration-300 flex flex-col"
               >
-                <div className="aspect-[4/3] bg-white flex items-center justify-center overflow-hidden">
+                <div className="relative aspect-[4/3] bg-[hsl(var(--secondary))] flex items-center justify-center overflow-hidden">
+                  <span className="absolute top-3 left-3 text-sm font-bold text-primary">
+                    /{String(index + 1).padStart(2, '0')}
+                  </span>
                   {cover ? (
                     <img
                       src={cover}
                       alt={category.name}
-                      className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <Icon name="Package" size={64} className="text-muted-foreground/30" />
@@ -47,7 +58,7 @@ export default function CatalogSectionsGrid() {
                 </div>
                 <div className="p-5 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-heading font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                    <h3 className="font-heading font-bold leading-tight group-hover:text-primary transition-colors">
                       {category.name}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -59,15 +70,6 @@ export default function CatalogSectionsGrid() {
               </Link>
             );
           })}
-        </div>
-
-        <div className="text-center mt-10">
-          <Link to="/catalog">
-            <Button size="lg" variant="outline" className="px-8">
-              Весь каталог
-              <Icon name="ArrowRight" className="ml-2" size={20} />
-            </Button>
-          </Link>
         </div>
       </div>
     </section>
