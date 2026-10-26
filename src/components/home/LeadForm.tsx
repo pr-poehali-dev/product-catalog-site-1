@@ -1,90 +1,59 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
-const DIRECTIONS = [
-  'Видеонаблюдение',
-  'Контроль доступа (СКУД)',
-  'Домофония',
-  'Сетевое оборудование',
-  'Сигнализация',
-  'Другое',
-];
-
 interface LeadFormProps {
-  title?: string;
-  idPrefix: string;
+  title: string;
+  subtitle?: string;
 }
 
-export default function LeadForm({ title = 'Оставить заявку', idPrefix }: LeadFormProps) {
-  const [form, setForm] = useState({ name: '', phone: '', direction: DIRECTIONS[0], object: '' });
+export default function LeadForm({ title, subtitle }: LeadFormProps) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) {
-      toast.error('Заполните имя и телефон');
+      toast.error('Заполните обязательные поля');
       return;
     }
-    toast.success('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
-    setForm({ name: '', phone: '', direction: DIRECTIONS[0], object: '' });
+    toast.success('Заявка отправлена!');
+    setForm({ name: '', phone: '', email: '', message: '' });
   };
 
   return (
     <form onSubmit={submit} className="bg-white text-foreground rounded-xl p-6 md:p-8 shadow-xl space-y-4">
-      <h3 className="font-heading font-bold text-2xl">{title}</h3>
-
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-name`} className="text-sm text-muted-foreground">Имя</label>
-        <Input
-          id={`${idPrefix}-name`}
-          value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-          placeholder="Иван"
-        />
+      <div>
+        <h3 className="font-heading font-bold text-2xl">{title}</h3>
+        {subtitle && <p className="text-sm text-muted-foreground mt-2">{subtitle}</p>}
       </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-phone`} className="text-sm text-muted-foreground">Телефон</label>
-        <Input
-          id={`${idPrefix}-phone`}
-          type="tel"
-          value={form.phone}
-          onChange={e => setForm({ ...form, phone: e.target.value })}
-          placeholder="+7 (___) ___-__-__"
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-direction`} className="text-sm text-muted-foreground">Направление</label>
-        <select
-          id={`${idPrefix}-direction`}
-          value={form.direction}
-          onChange={e => setForm({ ...form, direction: e.target.value })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          {DIRECTIONS.map(d => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-object`} className="text-sm text-muted-foreground">Объект</label>
-        <Input
-          id={`${idPrefix}-object`}
-          value={form.object}
-          onChange={e => setForm({ ...form, object: e.target.value })}
-          placeholder="Офис, склад, частный дом..."
-        />
-      </div>
-
+      <Input
+        value={form.name}
+        onChange={e => setForm({ ...form, name: e.target.value })}
+        placeholder="Ваше имя *"
+      />
+      <Input
+        type="tel"
+        value={form.phone}
+        onChange={e => setForm({ ...form, phone: e.target.value })}
+        placeholder="Телефон *"
+      />
+      <Input
+        type="email"
+        value={form.email}
+        onChange={e => setForm({ ...form, email: e.target.value })}
+        placeholder="Email"
+      />
+      <Textarea
+        value={form.message}
+        onChange={e => setForm({ ...form, message: e.target.value })}
+        placeholder="Ваш вопрос..."
+        rows={3}
+      />
       <Button type="submit" size="lg" className="w-full">
-        Отправить
+        Отправить заявку
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Отправляя заявку, вы соглашаетесь с политикой конфиденциальности
-      </p>
     </form>
   );
 }

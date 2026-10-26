@@ -56,15 +56,16 @@ export default function HomeHeader({
               <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white">Каталог</Button>
             </Link>
             {[
-              { id: 'catalog', label: 'Разделы' },
-              { id: 'steps', label: 'Этапы работы' },
-              { id: 'about', label: 'О нас' },
+              { id: 'home', label: 'Главная' },
+              { id: 'about', label: 'О компании' },
+              { id: 'delivery', label: 'Доставка' },
+              { id: 'faq', label: 'FAQ' },
               { id: 'contacts', label: 'Контакты' }
             ].map(item => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`text-sm uppercase tracking-wide transition-colors hover:text-primary ${
+                className={`text-sm transition-colors hover:text-primary ${
                   activeSection === item.id ? 'text-primary font-medium' : 'text-white/70'
                 }`}
               >
@@ -73,9 +74,7 @@ export default function HomeHeader({
             ))}
           </div>
 
-          <a href="tel:+78127700670" className="hidden lg:block font-bold whitespace-nowrap hover:text-primary transition-colors">
-            +7 (812) 770-06-70
-          </a>
+
 
           <Sheet>
             <SheetTrigger asChild>

@@ -20,9 +20,9 @@ export default function CatalogSectionsGrid() {
       <div className="container mx-auto px-4">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
           <div>
-            <h2 className="text-3xl md:text-5xl font-heading font-bold mb-2">Наши разделы</h2>
+            <h2 className="text-3xl md:text-5xl font-heading font-bold mb-2">Каталог оборудования</h2>
             <p className="text-muted-foreground">
-              {products.length} товаров в {categories.length} разделах
+              Широкий ассортимент профессионального оборудования от ведущих производителей
             </p>
           </div>
           <Link to="/catalog">
